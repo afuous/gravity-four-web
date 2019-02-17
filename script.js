@@ -44,9 +44,6 @@
   }
   clearBoard();
 
-  // TODO: for testing
-  // gameState[5][2] = RED;
-
   var lastUpdate;
 
   var fps = 60;
@@ -303,7 +300,9 @@
 
     if (boardMidX - halfLenX < x && x < boardMidX + halfLenX && y < boardMidY + halfLenY) {
       var c = Math.floor((x - (boardMidX - halfLenX)) / squareLength);
-      canvasClickCallback(c);
+      if (gameState[0][c] == EMPTY) {
+        canvasClickCallback(c);
+      }
     }
   });
 
@@ -333,6 +332,24 @@
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
+  }
+
+  function postRequest(path, data, cb) {
+    var xhr = new XMLHttpRequest();
+    // https://us-central1-treehacks-1518852998483.cloudfunctions.net
+    var url = "http://gravityfour.voidpigeon.com";
+    xhr.open("POST", url + path);
+    xhr.setRequestHeader("Content-type", "application/json");
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4) {
+        if (xhr.status == 200) {
+          cb(JSON.parse(xhr.responseText));
+        } else {
+          // TODO: error
+        }
+      }
+    };
+    xhr.send(JSON.stringify(data));
   }
 
   var rotateCallback = function() {};
@@ -490,7 +507,7 @@
         return;
       }
       canMove = false;
-      moveSequence += direction == LEFT ? 7 : 8;
+      moveSequence += direction == LEFT ? 8 : 7;
       rotateBoard(direction, afterHumanMove);
     };
 
@@ -507,34 +524,23 @@
 
     function makeAiMove() {
       canMove = false;
-      var xhr = new XMLHttpRequest();
-      // xhr.open("POST", "https://us-central1-treehacks-1518852998483.cloudfunctions.net/ai", true);
-      xhr.open("POST", "http://gravityfour.voidpigeon.com", true);
-      xhr.setRequestHeader("Content-type", "application/json");
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState == 4) {
-          if (xhr.status == 200) {
-            console.log(xhr.responseText)
-            var obj = JSON.parse(xhr.responseText);
-            var aiMove = obj.ai;
-            moveSequence += aiMove;
-            if (aiMove < 7) {
-              placePiece(aiPlayer, aiMove, afterMove);
-            } else if (aiMove == 7) {
-              rotateBoard(LEFT, afterMove);
-            } else { // aiMove == 8
-              rotateBoard(RIGHT, afterMove);
-            }
-          } else {
-            // TODO: error
-          }
-        }
-      };
       console.log(aiDifficulty, moveSequence);
-      xhr.send(JSON.stringify({
+      postRequest("/ai", JSON.stringify({
         mode: aiDifficulty,
         game: moveSequence.split("").join(" "),
-      })); // TODO: a
+      }), function(result) {
+          console.log(result)
+          var obj = JSON.parse(result);
+          var aiMove = obj.ai;
+          moveSequence += aiMove;
+          if (aiMove < 7) {
+            placePiece(aiPlayer, aiMove, afterMove);
+          } else if (aiMove == 8) {
+            rotateBoard(LEFT, afterMove);
+          } else { // aiMove == 7
+            rotateBoard(RIGHT, afterMove);
+          }
+      });
     }
 
     function afterMove() {
@@ -544,9 +550,9 @@
         canMove = false;
         gameEnded = true;
         if (gameEnd == RED) {
-          getElem("gameEndText").innerHTML = getElem("displayName1").innerHTML + " wins";
+          getElem("gameEndText").innerHTML = "Winner: " + getElem("displayName1").innerHTML;
         } else if (gameEnd == BLACK) {
-          getElem("gameEndText").innerHTML = getElem("displayName2").innerHTML + " wins";
+          getElem("gameEndText").innerHTML = "Winner: " + getElem("displayName2").innerHTML;
         } else {
           getElem("gameEndText").innerHTML = "Tie game";
         }
@@ -556,6 +562,160 @@
       }
     }
   });
+
+  window.startTwoPlayerNetworked = function(displayName, uid) {
+    var challenge;
+
+    function lookForMatch() {
+      postRequest("/app/api/match", { uid: uid }, function(obj) {
+        if (Object.keys(obj.challenge).length > 0) {
+          // found a match
+          console.log("found");
+          challenge = obj.challenge;
+          show("gameScreen");
+          hide("introScreen");
+          restartGame();
+          getElem("displayName1").innerHTML = uid == challenge.playerOne ? "You" : "Them";
+          getElem("displayName2").innerHTML = uid == challenge.playerTwo ? "You" : "Them";
+          if (uid == challenge.playerTwo) {
+            waitForMove();
+          }
+        } else {
+          setTimeout(lookForMatch, 1000);
+        }
+      });
+    }
+
+    postRequest("/app/api/match/exit", { uid: uid }, lookForMatch);
+
+    var humanPlayer = humanGoesFirst ? RED : BLACK;
+    var aiPlayer = humanGoesFirst ? BLACK : RED;
+
+    var canMove;
+    var currentPlayer;
+    var gameEnded;
+    var moveSequence;
+
+    function setPlayer(player) {
+      currentPlayer = player;
+      getElem("displayName1").style.fontWeight = currentPlayer == RED ? "bold" : "normal";
+      getElem("displayName2").style.fontWeight = currentPlayer == BLACK ? "bold" : "normal";
+    }
+
+    function switchPlayer() {
+      setPlayer(currentPlayer == RED ? BLACK : RED);
+    }
+
+    function restartGame() {
+      clearBoard();
+      draw();
+      canMove = true;
+      setPlayer(RED);
+      gameEnded = false;
+      moveSequence = "";
+    }
+
+    restartGame();
+
+    hide("playAgainButton");
+
+    canvasClickCallback = function(c) {
+      if (!canMove) {
+        return;
+      }
+      canMove = false;
+      moveSequence += c;
+      placePiece(currentPlayer, c, afterYourMove);
+      postRequest("/app/api/play", {
+        uid: uid,
+        move: c,
+        challenge: challenge,
+      }, function(obj) {
+        moveSequence = obj.moves.join("");
+        // TODO check times
+      });
+    };
+
+    rotateCallback = function(direction) {
+      if (!canMove) {
+        return;
+      }
+      canMove = false;
+      moveSequence += direction == LEFT ? 8 : 7;
+      rotateBoard(direction, afterYourMove);
+      postRequest("/app/api/play", {
+        uid: uid,
+        move: direction == LEFT ? 8 : 7,
+        challenge: challenge,
+      }, function(obj) {
+        moveSequence = obj.moves.join("");
+        // TODO check times
+      });
+    };
+
+    function afterYourMove() {
+      afterMove();
+      if (!gameEnded) {
+        waitForMove();
+      }
+    }
+
+    function waitForMove() {
+      canMove = false;
+      function poll() {
+        postRequest("/app/api/play/moves", { challenge: challenge }, function(obj) {
+          var newMoveSequence = obj.moves.join("");
+          if (moveSequence != newMoveSequence) {
+            moveSequence = newMoveSequence;
+            var move = moveSequence[moveSequence.length - 1];
+            if (move < 7) {
+              placePiece(currentPlayer, parseInt(move), afterMove);
+            } else if (move == 8) {
+              rotateBoard(LEFT, afterMove);
+            } else { // move == 7
+              rotateBoard(RIGHT, afterMove);
+            }
+          } else {
+            setTimeout(poll, 1000);
+          }
+        });
+      }
+      poll();
+    }
+
+    function afterMove() {
+      canMove = true;
+      var gameEnd = checkGameEnd();
+      if (gameEnd) {
+        canMove = false;
+        gameEnded = true;
+        if (gameEnd == RED) {
+          getElem("gameEndText").innerHTML = "Winner: " + getElem("displayName1").innerHTML;
+        } else if (gameEnd == BLACK) {
+          getElem("gameEndText").innerHTML = "Winner: " + getElem("displayName2").innerHTML;
+        } else {
+          getElem("gameEndText").innerHTML = "Tie game";
+        }
+        getElem("gameEndText").style.color = "black";
+
+        var won;
+        if (gameEnd == RED) {
+          won = challenge.playerOne == uid ? 1 : 0;
+        } else if (gameEnd == BLACK) {
+          won = challenge.playerOne == uid ? 0 : 1;
+        } else {
+          won = 0.5;
+        }
+        postRequest("/app/api/endGame", {
+          uid: uid,
+          won: won,
+          challenge: challenge,
+        }, function() {});
+      } else {
+        switchPlayer();
+      }
+    }
+  };
 
   var TIE = 3;
 

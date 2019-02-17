@@ -2,6 +2,43 @@
 	<head>
 		<title>Gravity Four</title>
 		<link rel="stylesheet" href="style.css" />
+
+		<script src="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.js"></script>
+		<link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.css" />
+		<script src="https://www.gstatic.com/firebasejs/5.8.3/firebase.js"></script>
+		<script>
+			// Initialize Firebase
+			var config = {
+				apiKey: "AIzaSyBX0j91I_lq_SKdkY4leRQI-9t0hklFLnM",
+				authDomain: "treehacks-2019.firebaseapp.com",
+				databaseURL: "https://treehacks-2019.firebaseio.com",
+				projectId: "treehacks-2019",
+				storageBucket: "treehacks-2019.appspot.com",
+				messagingSenderId: "873902399366"
+			};
+			firebase.initializeApp(config);
+		</script>
+		<script type="text/javascript">
+			var uiConfig = {
+				callbacks: {
+					signInSuccessWithAuthResult: function(thing) {
+						var displayName = thing.user.displayName;
+						var uid = thing.user.uid;
+						window.startTwoPlayerNetworked(displayName, uid);
+						return false;
+					},
+				},
+				signInOptions: [
+					firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+					firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+					firebase.auth.EmailAuthProvider.PROVIDER_ID,
+					// firebaseui.auth.AnonymousAuthProvider.PROVIDER_ID,
+				],
+			};
+			var ui = new firebaseui.auth.AuthUI(firebase.auth());
+			ui.start("#firebaseui-auth-container", uiConfig);
+		</script>
+
 	</head>
 	<body>
 		<table width="100%" height="100%">
@@ -25,7 +62,7 @@
 							<br>
 							<input type="radio" name="aiWhoGoesFirst" id="aiGoesFirst" value="aiGoesFirst" /> <label for="aiGoesFirst">AI</label>
 							<br>
-							Difficulty: <input type="range" id="aiDifficulty" min="0" max="2" step="1" />
+							Difficulty: <input type="range" id="aiDifficulty" min="0" max="3" step="1" />
 							<br>
 							<input type="button" id="onePlayerAiPlay" value="Start one player AI" />
 						</div>
@@ -33,6 +70,8 @@
 						<!-- <input type="button" id="startButton" value="Start" /> -->
 
 						<!-- TODO back button -->
+
+						<div id="firebaseui-auth-container"></div>
 					</div>
 					<div id="gameScreen" class="hidden">
 						<table>
