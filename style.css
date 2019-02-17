@@ -1,0 +1,26 @@
+body {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.selectable {
+  -webkit-user-select: all;
+  -moz-user-select: all;
+  -ms-user-select: all;
+  user-select: all;
+}
+
+/* .gameCanvas { */
+/*   border: 1px solid black; */
+/* } */
+
+.shown {
+  display: block;
+}
+
+.hidden {
+  display: none;
+}
+

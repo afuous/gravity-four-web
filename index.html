@@ -1,0 +1,68 @@
+<html>
+	<head>
+		<title>Gravity Four</title>
+		<link rel="stylesheet" href="style.css" />
+	</head>
+	<body>
+		<table width="100%" height="100%">
+			<tr>
+				<td align="center" valign="middle">
+					<div id="introScreen" class="shown">
+						<input type="button" id="twoPlayerLocalStart" value="Start two player local" />
+						<br>
+						<div id="twoPlayerLocalOptions" class="hidden">
+							Player 1 name: <input type="text" id="inputName1" />
+							<br>
+							Player 2 name: <input type="text" id="inputName2" />
+							<br>
+							<input type="button" id="twoPlayerLocalPlay" value="Play two player local" />
+						</div>
+						<br>
+						<input type="button" id="onePlayerAiStart" value="Start one player AI" />
+						<br>
+						<div id="onePlayerAiOptions" class="hidden">
+							<input type="radio" name="aiWhoGoesFirst" id="humanGoesFirst" value="humanGoesFirst" /> <label for="humanGoesFirst">You</label>
+							<br>
+							<input type="radio" name="aiWhoGoesFirst" id="aiGoesFirst" value="aiGoesFirst" /> <label for="aiGoesFirst">AI</label>
+							<br>
+							Difficulty: <input type="range" id="aiDifficulty" min="0" max="2" step="1" />
+							<br>
+							<input type="button" id="onePlayerAiPlay" value="Start one player AI" />
+						</div>
+						<!-- <br> -->
+						<!-- <input type="button" id="startButton" value="Start" /> -->
+
+						<!-- TODO back button -->
+					</div>
+					<div id="gameScreen" class="hidden">
+						<table>
+							<tr>
+								<td align="left"> <input type="button" id="reloadButton" value="Back" /> </td>
+								<td align="right"> <input type="button" id="playAgainButton" value="Play Again" /> </td>
+							</tr>
+							<tr>
+								<td align="center"> <span id="displayName1" style="color: red; font-weight: bold;"></span> </td>
+								<td align="center"> <span id="displayName2" style="color: black; font-weight: normal;"></span> </td>
+							</tr>
+							<tr>
+								<td colspan="2">
+									<div>
+										<canvas id="canvas" class="gameCanvas"></canvas>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td align="center"> <img src="RotateLeft.png" id="rotateLeft" height="100px" /> </td>
+								<td align="center"> <img src="RotateRight.png" id="rotateRight" height="100px" /> </td>
+							</tr>
+							<tr>
+								<td align="center" colspan="2"> <span id="gameEndText" style="color: white;">.</span> </td>
+							</tr>
+						</table>
+					</div>
+				</td>
+			</tr>
+		</table>
+		<script type="text/javascript" src="script.js"></script>
+	</body>
+</html>
