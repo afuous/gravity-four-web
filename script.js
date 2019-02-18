@@ -525,13 +525,12 @@
     function makeAiMove() {
       canMove = false;
       console.log(aiDifficulty, moveSequence);
-      postRequest("/ai", JSON.stringify({
+      postRequest("/ai", {
         mode: aiDifficulty,
         game: moveSequence.split("").join(" "),
-      }), function(result) {
+      }, function(result) {
           console.log(result)
-          var obj = JSON.parse(result);
-          var aiMove = obj.ai;
+          var aiMove = result.ai;
           moveSequence += aiMove;
           if (aiMove < 7) {
             placePiece(aiPlayer, aiMove, afterMove);
