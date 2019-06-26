@@ -782,7 +782,7 @@
       return BLACK;
     } else {
       for (var r = 0; r < numRows; r++) {
-        for (var c = 0; c < numRows; c++) {
+        for (var c = 0; c < numCols; c++) {
           if (gameState[r][c] == EMPTY) {
             return false;
           }
